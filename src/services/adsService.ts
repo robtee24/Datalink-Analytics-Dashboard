@@ -1,6 +1,6 @@
 import type { AdsMetrics, DateRange } from '../types';
 
-const generateMockCampaigns = (platform: string, count: number): AdsMetrics['campaigns'] => {
+const _generateMockCampaigns = (platform: string, count: number): AdsMetrics['campaigns'] => {
   return Array.from({ length: count }, (_, i) => ({
     id: `${platform}-campaign-${i + 1}`,
     name: `${platform} Campaign ${i + 1}`,

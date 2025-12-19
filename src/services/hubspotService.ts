@@ -65,7 +65,7 @@ async function fetchHubSpotAnalyticsData(startDate: string, endDate: string) {
     // Try backend proxy first (if available)
     try {
       const proxyResponse = await fetch(
-        `' + API_BASE_URL + '/api/hubspot/analytics?startDate=${startDate}&endDate=${endDate}`
+        `${API_BASE_URL}/api/hubspot/analytics?startDate=${startDate}&endDate=${endDate}`
       );
       
       if (proxyResponse.ok) {
@@ -184,7 +184,7 @@ async function fetchHubSpotFormsData(startDate: string, endDate: string) {
   try {
     // Use backend proxy (required for HubSpot API)
     const proxyResponse = await fetch(
-      `' + API_BASE_URL + '/api/hubspot/forms?startDate=${startDate}&endDate=${endDate}`
+      `${API_BASE_URL}/api/hubspot/forms?startDate=${startDate}&endDate=${endDate}`
     );
     
     if (!proxyResponse.ok) {

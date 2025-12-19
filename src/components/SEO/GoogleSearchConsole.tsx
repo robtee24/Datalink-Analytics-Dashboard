@@ -4,7 +4,6 @@ import type { DateRange } from '../../types';
 import { fetchGoogleSearchConsole } from '../../services/googleSearchConsoleService';
 import { API_BASE_URL } from '../../config/api';
 import SectionHeader from '../SectionHeader';
-import KPICard from '../KPICard';
 import LineChart from '../LineChart';
 
 interface GoogleSearchConsoleProps {

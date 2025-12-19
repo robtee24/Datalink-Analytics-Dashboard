@@ -1,6 +1,6 @@
 import type { GoogleSearchConsoleMetrics, DateRange } from '../types';
 import { format } from 'date-fns';
-import { API_CONFIG, API_BASE_URL } from '../config/api';
+import { API_BASE_URL } from '../config/api';
 
 // Note: Google Search Console API data may differ from the web interface due to:
 // 1. Privacy filtering (low-volume queries are excluded)
@@ -298,7 +298,7 @@ function getUnavailableDataForPeriod(_startDate: string, _endDate: string): Goog
   };
 }
 
-function getMockDataForPeriod(startDate: string, endDate: string): GoogleSearchConsoleMetrics {
+function _getMockDataForPeriod(_startDate: string, _endDate: string): GoogleSearchConsoleMetrics {
   const mockKeywords = [
     { keyword: 'data analytics services', position: 3, impressions: 12450, clicks: 342, ctr: 2.75 },
     { keyword: 'business intelligence solutions', position: 5, impressions: 8920, clicks: 198, ctr: 2.22 },

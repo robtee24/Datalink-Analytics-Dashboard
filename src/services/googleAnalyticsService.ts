@@ -1,6 +1,6 @@
 import type { HubSpotMetrics, DateRange } from '../types';
 import { format } from 'date-fns';
-import { API_CONFIG, API_BASE_URL } from '../config/api';
+import { API_BASE_URL } from '../config/api';
 
 // Note: GA4 Data API requires OAuth2 and server-side implementation
 // This service is structured to work with a backend proxy if needed
@@ -15,36 +15,24 @@ export const fetchGoogleAnalytics = async (
   const endDate = formatDate(dateRange.endDate);
 
   try {
-    // GA4 Data API endpoint
-    // Note: This requires OAuth2 token and proper property ID
-    // You'll need to set up OAuth2 flow or use a backend proxy
-    
-    const propertyId = API_CONFIG.googleAnalytics.streamId; // Using stream ID as property identifier
-    
-    // For now, we'll try to fetch using the Measurement Protocol or Reporting API
-    // In production, you'd need to:
-    // 1. Set up OAuth2 flow to get access token
-    // 2. Use the access token to call GA4 Data API
-    // 3. Or use a backend proxy to handle authentication
-    
-    const current = await fetchGA4Data(propertyId, startDate, endDate);
+    const current = await fetchGA4Data(startDate, endDate);
     
     let compare: HubSpotMetrics | null = null;
     if (compareDateRange) {
       const compareStartDate = formatDate(compareDateRange.startDate);
       const compareEndDate = formatDate(compareDateRange.endDate);
-      compare = await fetchGA4Data(propertyId, compareStartDate, compareEndDate);
+      compare = await fetchGA4Data(compareStartDate, compareEndDate);
     }
 
     return { current, compare };
   } catch (error) {
     console.error('Error fetching Google Analytics data:', error);
     // Return unavailable data (will show N/A)
-    return getUnavailableData(dateRange, compareDateRange);
+    return getUnavailableData(compareDateRange);
   }
 };
 
-async function fetchGA4Data(propertyId: string, startDate: string, endDate: string): Promise<HubSpotMetrics> {
+async function fetchGA4Data(startDate: string, endDate: string): Promise<HubSpotMetrics> {
   try {
     // Call backend proxy for Google Analytics API
     const response = await fetch(`${API_BASE_URL}/api/google/analytics`, {
@@ -131,7 +119,6 @@ function parseGA4Response(data: any, startDate: string, endDate: string): HubSpo
 }
 
 function getUnavailableData(
-  dateRange: DateRange,
   compareDateRange: DateRange | null
 ): { current: HubSpotMetrics; compare: HubSpotMetrics | null } {
   const unavailableCurrent: HubSpotMetrics = {
