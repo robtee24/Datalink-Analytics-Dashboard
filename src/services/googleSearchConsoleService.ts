@@ -298,43 +298,6 @@ function getUnavailableDataForPeriod(_startDate: string, _endDate: string): Goog
   };
 }
 
-function _getMockDataForPeriod(_startDate: string, _endDate: string): GoogleSearchConsoleMetrics {
-  const mockKeywords = [
-    { keyword: 'data analytics services', position: 3, impressions: 12450, clicks: 342, ctr: 2.75 },
-    { keyword: 'business intelligence solutions', position: 5, impressions: 8920, clicks: 198, ctr: 2.22 },
-    { keyword: 'cloud data management', position: 7, impressions: 6540, clicks: 145, ctr: 2.22 },
-    { keyword: 'data integration platform', position: 4, impressions: 5430, clicks: 167, ctr: 3.07 },
-    { keyword: 'enterprise analytics', position: 6, impressions: 4320, clicks: 98, ctr: 2.27 },
-    { keyword: 'data visualization tools', position: 8, impressions: 3890, clicks: 76, ctr: 1.95 },
-    { keyword: 'big data consulting', position: 9, impressions: 3210, clicks: 65, ctr: 2.02 },
-    { keyword: 'data warehouse solutions', position: 5, impressions: 2980, clicks: 89, ctr: 2.99 },
-    { keyword: 'analytics dashboard', position: 4, impressions: 2670, clicks: 112, ctr: 4.19 },
-    { keyword: 'data pipeline automation', position: 7, impressions: 2340, clicks: 54, ctr: 2.31 },
-    { keyword: 'real-time analytics', position: 6, impressions: 2100, clicks: 67, ctr: 3.19 },
-    { keyword: 'data quality management', position: 8, impressions: 1890, clicks: 43, ctr: 2.28 },
-    { keyword: 'predictive analytics', position: 5, impressions: 1760, clicks: 78, ctr: 4.43 },
-    { keyword: 'data governance platform', position: 9, impressions: 1650, clicks: 32, ctr: 1.94 },
-    { keyword: 'business data insights', position: 7, impressions: 1540, clicks: 56, ctr: 3.64 },
-    { keyword: 'data migration services', position: 6, impressions: 1430, clicks: 61, ctr: 4.27 },
-    { keyword: 'cloud analytics platform', position: 4, impressions: 1320, clicks: 89, ctr: 6.74 },
-    { keyword: 'data science consulting', position: 8, impressions: 1210, clicks: 34, ctr: 2.81 },
-    { keyword: 'machine learning analytics', position: 10, impressions: 1100, clicks: 28, ctr: 2.55 },
-    { keyword: 'data strategy consulting', position: 5, impressions: 990, clicks: 45, ctr: 4.55 },
-    { keyword: 'data architecture design', position: 7, impressions: 880, clicks: 38, ctr: 4.32 },
-    { keyword: 'enterprise data platform', position: 6, impressions: 770, clicks: 42, ctr: 5.45 },
-  ];
-
-  return {
-    pagesIndexed: 1245,
-    impressions: 89234,
-    clicks: 2341,
-    keywords: mockKeywords,
-    impressionsHistory: generateHistoryData(new Date(startDate), new Date(endDate), 85000, 95000),
-    clicksHistory: generateHistoryData(new Date(startDate), new Date(endDate), 2000, 2500),
-    pagesIndexedHistory: generateHistoryData(new Date(startDate), new Date(endDate), 1200, 1250),
-  };
-}
-
 function generateHistoryData(startDate: Date, endDate: Date, min: number, max: number) {
   const data = [];
   const current = new Date(startDate);
