@@ -1,7 +1,23 @@
 // API Configuration
 
-// Backend API URL - uses environment variable in production, localhost in development
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// Backend API URL:
+// - In production (Vercel): Use empty string for relative URLs (same domain)
+// - In development: Use localhost:3001
+// - Can be overridden with VITE_API_URL environment variable
+const getApiBaseUrl = () => {
+  // If explicitly set, use that
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // In production (Vercel), use relative URLs
+  if (import.meta.env.PROD) {
+    return '';
+  }
+  // In development, use localhost
+  return 'http://localhost:3001';
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 // API endpoints - all calls go through the backend proxy
 export const API_ENDPOINTS = {
