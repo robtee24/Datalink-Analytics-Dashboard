@@ -1,65 +1,23 @@
-import { API_CONFIG, getTokens } from '../../_config.js';
-
-async function refreshAccessToken() {
-  const tokens = getTokens();
-  if (!tokens.refreshToken) return null;
-
-  try {
-    const response = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: API_CONFIG.google.clientId,
-        client_secret: API_CONFIG.google.clientSecret,
-        refresh_token: tokens.refreshToken,
-        grant_type: 'refresh_token',
-      }),
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      const { setTokens } = await import('../../_config.js');
-      setTokens(data.access_token, tokens.refreshToken, data.expires_in || 3600);
-      return data.access_token;
-    }
-  } catch (error) {
-    console.error('Token refresh failed:', error);
-  }
-  return null;
-}
-
-async function getAccessToken() {
-  const tokens = getTokens();
-  
-  if (tokens.accessToken && tokens.expiresAt > Date.now()) {
-    return tokens.accessToken;
-  }
-  
-  if (tokens.refreshToken) {
-    return await refreshAccessToken();
-  }
-  
-  return null;
-}
+import { API_CONFIG, getValidAccessToken } from '../../_config.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const accessToken = await getAccessToken();
-  
-  if (!accessToken) {
-    return res.status(401).json({ 
-      error: 'Authentication required',
-      message: 'Google OAuth2 access token required'
-    });
-  }
-
-  const { startDate, endDate } = req.body;
-  const siteUrl = 'https://www.datalinknetworks.net/';
-
   try {
+    const accessToken = await getValidAccessToken();
+    
+    if (!accessToken) {
+      return res.status(401).json({ 
+        error: 'Authentication required',
+        message: 'Google OAuth2 access token required. Please authorize via the dashboard.'
+      });
+    }
+
+    const { startDate, endDate } = req.body;
+    const siteUrl = API_CONFIG.googleSearchConsole.siteUrl;
+
     // Fetch keywords with pagination
     let allRows = [];
     let startRow = 0;
@@ -88,6 +46,14 @@ export default async function handler(req, res) {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Search Console error:', response.status, errorText);
+        
+        if (response.status === 401 || response.status === 403) {
+          return res.status(401).json({ 
+            error: 'Authentication error',
+            message: 'Please re-authorize Google services'
+          });
+        }
+        
         throw new Error(`API error: ${response.status}`);
       }
 
@@ -130,4 +96,3 @@ export default async function handler(req, res) {
     });
   }
 }
-
