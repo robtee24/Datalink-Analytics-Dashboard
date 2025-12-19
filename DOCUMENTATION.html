@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datalink Analytics Dashboard - Documentation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #1a1a2e;
+            background: #ffffff;
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        @media print {
+            body {
+                padding: 20px;
+                font-size: 11pt;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+        
+        .header {
+            text-align: center;
+            padding: 40px 0;
+            border-bottom: 3px solid #3b82f6;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1e3a5f;
+            margin-bottom: 10px;
+        }
+        
+        .header .subtitle {
+            font-size: 1.2rem;
+            color: #64748b;
+            font-weight: 400;
+        }
+        
+        .header .version {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e3a5f;
+            margin: 30px 0 15px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #334155;
+            margin: 25px 0 12px 0;
+        }
+        
+        h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #475569;
+            margin: 20px 0 10px 0;
+        }
+        
+        p {
+            margin-bottom: 12px;
+            color: #475569;
+        }
+        
+        .toc {
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+        
+        .toc h3 {
+            margin-top: 0;
+            color: #1e3a5f;
+        }
+        
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .toc li {
+            padding: 6px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .toc li:last-child {
+            border-bottom: none;
+        }
+        
+        .toc a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        ul, ol {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+        
+        li {
+            margin-bottom: 6px;
+            color: #475569;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #e2e8f0;
+        }
+        
+        th {
+            background: #f1f5f9;
+            font-weight: 600;
+            color: #1e3a5f;
+        }
+        
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+        
+        code {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.85em;
+            color: #e11d48;
+        }
+        
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+        
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .success-box {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .feature-card {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .feature-card h4 {
+            margin-top: 0;
+            color: #1e3a5f;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .badge-blue {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        
+        .badge-green {
+            background: #d1fae5;
+            color: #059669;
+        }
+        
+        .badge-orange {
+            background: #fed7aa;
+            color: #c2410c;
+        }
+        
+        .print-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #3b82f6;
+            color: white;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+            transition: all 0.2s;
+        }
+        
+        .print-button:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+        
+        @media print {
+            .print-button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button no-print" onclick="window.print()">📄 Print to PDF</button>
+
+    <div class="header">
+        <h1>📊 Datalink Analytics Dashboard</h1>
+        <p class="subtitle">Complete Documentation Guide</p>
+        <p class="version">Version 1.0 | December 2024</p>
+    </div>
+
+    <div class="toc">
+        <h3>📑 Table of Contents</h3>
+        <ul>
+            <li>1. <a href="#overview">Overview</a></li>
+            <li>2. <a href="#tech-stack">Technology Stack</a></li>
+            <li>3. <a href="#getting-started">Getting Started</a></li>
+            <li>4. <a href="#features">Dashboard Features</a></li>
+            <li>5. <a href="#api">API Integrations</a></li>
+            <li>6. <a href="#config">Configuration Reference</a></li>
+            <li>7. <a href="#troubleshooting">Troubleshooting</a></li>
+        </ul>
+    </div>
+
+    <div class="section" id="overview">
+        <h2>1. Overview</h2>
+        <p>The Datalink Analytics Dashboard is a comprehensive marketing analytics platform that aggregates data from multiple marketing services into a single, unified view. It provides real-time insights into SEO performance, paid advertising campaigns, and business profile metrics.</p>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>🎯 Unified Dashboard</h4>
+                <p>View all marketing metrics in one place</p>
+            </div>
+            <div class="feature-card">
+                <h4>📅 Date Selection</h4>
+                <p>Analyze data for any custom time period</p>
+            </div>
+            <div class="feature-card">
+                <h4>📊 Period Comparison</h4>
+                <p>Compare performance between two time periods</p>
+            </div>
+            <div class="feature-card">
+                <h4>🔗 Multi-Platform</h4>
+                <p>Integrates with 7+ marketing platforms</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="section" id="tech-stack">
+        <h2>2. Technology Stack</h2>
+        
+        <table>
+            <tr>
+                <th>Component</th>
+                <th>Technology</th>
+            </tr>
+            <tr>
+                <td>Frontend</td>
+                <td>React 18 + TypeScript</td>
+            </tr>
+            <tr>
+                <td>Styling</td>
+                <td>Tailwind CSS v3</td>
+            </tr>
+            <tr>
+                <td>Charts</td>
+                <td>Recharts</td>
+            </tr>
+            <tr>
+                <td>Build Tool</td>
+                <td>Vite</td>
+            </tr>
+            <tr>
+                <td>Backend Proxy</td>
+                <td>Node.js + Express</td>
+            </tr>
+            <tr>
+                <td>Authentication</td>
+                <td>OAuth2 (Google), Private App Tokens (HubSpot)</td>
+            </tr>
+        </table>
+
+        <h3>Project Structure</h3>
+        <pre><code>Datalink-Analytics-Dashboard/
+├── src/
+│   ├── components/
+│   │   ├── Ads/           # Ad platform components
+│   │   ├── SEO/           # SEO tracking components
+│   │   └── *.tsx          # Shared components
+│   ├── services/          # API service functions
+│   ├── config/            # Configuration files
+│   └── types.ts           # TypeScript interfaces
+├── backend/
+│   ├── server.js          # Express proxy server
+│   └── config.js          # API credentials
+└── package.json</code></pre>
+    </div>
+
+    <div class="section page-break" id="getting-started">
+        <h2>3. Getting Started</h2>
+        
+        <h3>Prerequisites</h3>
+        <ul>
+            <li>Node.js v18 or higher</li>
+            <li>npm or yarn</li>
+            <li>API credentials for each service</li>
+        </ul>
+
+        <h3>Installation Steps</h3>
+        
+        <h4>Step 1: Install Dependencies</h4>
+        <pre><code># Frontend
+npm install
+
+# Backend
+cd backend && npm install</code></pre>
+
+        <h4>Step 2: Configure API Credentials</h4>
+        <p>Edit <code>backend/config.js</code> with your API keys and tokens.</p>
+
+        <h4>Step 3: Start the Servers</h4>
+        <pre><code># Backend (runs on port 3001)
+cd backend && node server.js
+
+# Frontend (runs on port 5173)
+npm run dev</code></pre>
+
+        <h4>Step 4: Authorize Services</h4>
+        <p>On first load, an OAuth modal will appear. Click "Authorize" for Google Services and complete the sign-in flow.</p>
+
+        <div class="info-box">
+            <strong>Quick Start URLs:</strong><br>
+            Frontend: <code>http://localhost:5173</code><br>
+            Backend: <code>http://localhost:3001</code>
+        </div>
+    </div>
+
+    <div class="section" id="features">
+        <h2>4. Dashboard Features</h2>
+
+        <h3>Date Period Selector</h3>
+        <p>Located at the top of the dashboard:</p>
+        <ul>
+            <li><strong>Measurement Period:</strong> Choose the date range for analysis</li>
+            <li><strong>Compare Toggle:</strong> Enable comparison mode</li>
+            <li><strong>Compare Period:</strong> Select a second date range when comparison is enabled</li>
+        </ul>
+
+        <h3>SEO Tracking Sections</h3>
+
+        <h4>HubSpot Analytics <span class="badge badge-blue">Private App</span></h4>
+        <table>
+            <tr><th>Metric</th><th>Description</th></tr>
+            <tr><td>Unique Visitors</td><td>Total unique site visitors</td></tr>
+            <tr><td>Bounce Rate</td><td>Percentage of single-page sessions</td></tr>
+            <tr><td>Time on Page</td><td>Average time spent on pages</td></tr>
+            <tr><td>Form Submissions</td><td>Total lead form submissions</td></tr>
+        </table>
+
+        <h4>Google Search Console <span class="badge badge-green">OAuth2</span></h4>
+        <table>
+            <tr><th>Metric</th><th>Description</th></tr>
+            <tr><td>Impressions</td><td>Times site appeared in search results</td></tr>
+            <tr><td>Clicks</td><td>Clicks from search results</td></tr>
+            <tr><td>Ranked Keywords</td><td>Number of ranking keywords</td></tr>
+            <tr><td>Position</td><td>Average search position</td></tr>
+        </table>
+        
+        <p><strong>Keywords Table Features:</strong></p>
+        <ul>
+            <li>Paginated list (20 per page)</li>
+            <li>Search filtering</li>
+            <li>Multi-select for comparison</li>
+            <li>Sortable columns</li>
+            <li>Accordion rows showing page-level data</li>
+            <li>Color-coded comparison (green = better, red = worse)</li>
+        </ul>
+
+        <h4>Google My Business <span class="badge badge-green">OAuth2</span></h4>
+        <table>
+            <tr><th>Metric</th><th>Description</th></tr>
+            <tr><td>Impressions</td><td>Profile views</td></tr>
+            <tr><td>Clicks</td><td>Website clicks</td></tr>
+            <tr><td>Calls</td><td>Phone calls initiated</td></tr>
+            <tr><td>Reviews</td><td>Total reviews count</td></tr>
+        </table>
+        <p>Includes breakdown for all 8 locations with verification badges.</p>
+    </div>
+
+    <div class="section page-break">
+        <h3>Paid Ads Tracking Sections</h3>
+        
+        <p>Each ad platform displays the following metrics:</p>
+        
+        <table>
+            <tr><th>Metric</th><th>Description</th></tr>
+            <tr><td>Impressions</td><td>Total ad impressions</td></tr>
+            <tr><td>Clicks</td><td>Total ad clicks</td></tr>
+            <tr><td>CTR</td><td>Click-through rate</td></tr>
+            <tr><td>CPC</td><td>Cost per click</td></tr>
+            <tr><td>Total Leads</td><td>Conversions/leads generated</td></tr>
+            <tr><td>Cost per Lead</td><td>Total spend / number of leads</td></tr>
+        </table>
+
+        <h4>Supported Platforms</h4>
+        
+        <table>
+            <tr><th>Platform</th><th>Auth Method</th><th>Status</th></tr>
+            <tr><td>Meta Ads (Facebook/Instagram)</td><td>OAuth2</td><td>✅ Active</td></tr>
+            <tr><td>Google Ads</td><td>OAuth2 + Developer Token</td><td>⚠️ Requires Basic Access</td></tr>
+            <tr><td>Reddit Ads</td><td>API Key</td><td>🔄 Pending</td></tr>
+            <tr><td>LinkedIn Ads</td><td>OAuth2</td><td>🔄 Pending</td></tr>
+        </table>
+
+        <h4>Campaign Table Features</h4>
+        <ul>
+            <li>10 campaigns per page with pagination</li>
+            <li>Search filtering by campaign name</li>
+            <li>Multi-select with Apply/Clear filter buttons</li>
+            <li>All columns sortable (click header)</li>
+            <li>Compare period data displayed when enabled</li>
+        </ul>
+    </div>
+
+    <div class="section" id="api">
+        <h2>5. API Integrations</h2>
+
+        <h3>Google Services (OAuth2)</h3>
+        <p>All Google services share the same OAuth2 flow:</p>
+        <ol>
+            <li>User clicks "Authorize" in OAuth modal</li>
+            <li>Popup opens to Google sign-in</li>
+            <li>User grants permissions</li>
+            <li>Tokens stored in backend memory</li>
+            <li>Automatic token refresh when expired</li>
+        </ol>
+
+        <div class="info-box">
+            <strong>Required OAuth Scopes:</strong>
+            <ul style="margin-bottom: 0;">
+                <li><code>webmasters.readonly</code> - Search Console</li>
+                <li><code>analytics.readonly</code> - Analytics</li>
+                <li><code>business.manage</code> - My Business</li>
+                <li><code>adwords</code> - Google Ads</li>
+            </ul>
+        </div>
+
+        <h3>Backend API Endpoints</h3>
+        <table>
+            <tr><th>Endpoint</th><th>Method</th><th>Description</th></tr>
+            <tr><td><code>/api/google/oauth/authorize</code></td><td>GET</td><td>Initiate OAuth</td></tr>
+            <tr><td><code>/api/google/oauth/status</code></td><td>GET</td><td>Check auth status</td></tr>
+            <tr><td><code>/api/google/search-console</code></td><td>POST</td><td>Fetch keywords</td></tr>
+            <tr><td><code>/api/google/search-console/daily</code></td><td>POST</td><td>Fetch daily metrics</td></tr>
+            <tr><td><code>/api/google/my-business</code></td><td>POST</td><td>Fetch GMB metrics</td></tr>
+            <tr><td><code>/api/google/ads</code></td><td>POST</td><td>Fetch campaigns</td></tr>
+            <tr><td><code>/api/hubspot/analytics</code></td><td>POST</td><td>Fetch HubSpot data</td></tr>
+            <tr><td><code>/health</code></td><td>GET</td><td>Health check</td></tr>
+        </table>
+    </div>
+
+    <div class="section page-break" id="config">
+        <h2>6. Configuration Reference</h2>
+
+        <h3>Backend Configuration</h3>
+        <p>File: <code>backend/config.js</code></p>
+        
+        <pre><code>const API_CONFIG = {
+  hubspot: {
+    privateAppToken: 'pat-na1-xxxxx',
+    baseUrl: 'https://api.hubapi.com',
+  },
+  google: {
+    clientId: 'xxxxx.apps.googleusercontent.com',
+    clientSecret: 'GOCSPX-xxxxx',
+    redirectUri: 'http://localhost:3001/api/google/oauth/callback',
+  },
+  googleAds: {
+    developerToken: 'xxxxx',  // From Google Ads API Center
+    customerId: '1234567890', // Without dashes
+  },
+  metaAds: {
+    appId: 'xxxxx',
+    appSecret: 'xxxxx',
+    adAccountId: 'xxxxx',
+  },
+};</code></pre>
+
+        <h3>Required Google Cloud APIs</h3>
+        <p>Enable in <a href="https://console.cloud.google.com/apis/library">Google Cloud Console</a>:</p>
+        <ul>
+            <li>Google Search Console API</li>
+            <li>Google Analytics Data API</li>
+            <li>My Business Account Management API</li>
+            <li>My Business Business Information API</li>
+            <li>Business Profile Performance API</li>
+            <li>Google Ads API</li>
+        </ul>
+
+        <div class="warning-box">
+            <strong>⚠️ Google Ads Developer Token:</strong><br>
+            The developer token must have "Basic Access" or "Standard Access" to query production data. "Test Access" only works with test accounts.
+        </div>
+    </div>
+
+    <div class="section" id="troubleshooting">
+        <h2>7. Troubleshooting</h2>
+
+        <h3>Common Issues</h3>
+
+        <h4>"Authentication required" Error</h4>
+        <div class="info-box">
+            <strong>Cause:</strong> OAuth tokens not set or expired<br>
+            <strong>Solution:</strong> Refresh page and click "Authorize" in OAuth modal
+        </div>
+
+        <h4>Google Ads "UNIMPLEMENTED" Error</h4>
+        <div class="warning-box">
+            <strong>Cause:</strong> Developer token has "Test Access" level<br>
+            <strong>Solution:</strong> Apply for "Basic Access" at <a href="https://ads.google.com/aw/apicenter">Google Ads API Center</a>
+        </div>
+
+        <h4>Google My Business Rate Limits</h4>
+        <div class="info-box">
+            <strong>Cause:</strong> Too many API requests<br>
+            <strong>Solution:</strong> Backend implements 30-minute caching and exponential backoff. Wait and retry.
+        </div>
+
+        <h4>"N/A" Displayed for Metrics</h4>
+        <div class="info-box">
+            <strong>Cause:</strong> API returned no data or error<br>
+            <strong>Solution:</strong> Check backend console logs, verify credentials, ensure APIs are enabled
+        </div>
+
+        <h3>Useful Commands</h3>
+        <pre><code># Check backend health
+curl http://localhost:3001/health
+
+# Check OAuth status
+curl http://localhost:3001/api/google/oauth/status
+
+# Restart servers
+lsof -ti:3001 | xargs kill -9  # Kill backend
+lsof -ti:5173 | xargs kill -9  # Kill frontend
+
+# View backend logs
+tail -f /tmp/backend.log</code></pre>
+
+        <div class="success-box">
+            <strong>📧 Support:</strong> For additional help, check backend console logs and verify all API credentials are correctly configured.
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 60px; padding-top: 30px; border-top: 2px solid #e2e8f0; color: #94a3b8;">
+        <p><strong>Datalink Analytics Dashboard</strong></p>
+        <p>Documentation v1.0 | December 2024</p>
+    </div>
+
+</body>
+</html>
+

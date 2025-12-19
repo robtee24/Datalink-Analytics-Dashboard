@@ -1,0 +1,21 @@
+import { API_CONFIG } from '../../_config.js';
+
+export default function handler(req, res) {
+  const scopes = [
+    'https://www.googleapis.com/auth/webmasters.readonly',
+    'https://www.googleapis.com/auth/analytics.readonly',
+    'https://www.googleapis.com/auth/business.manage',
+    'https://www.googleapis.com/auth/adwords',
+  ];
+
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+    `client_id=${API_CONFIG.google.clientId}` +
+    `&redirect_uri=${encodeURIComponent(API_CONFIG.google.redirectUri)}` +
+    `&response_type=code` +
+    `&scope=${encodeURIComponent(scopes.join(' '))}` +
+    `&access_type=offline` +
+    `&prompt=consent`;
+
+  res.status(200).json({ authUrl });
+}
+

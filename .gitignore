@@ -1,0 +1,53 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment files (keep .env.example)
+.env
+.env.local
+.env.production
+backend/.env
+
+# Vercel
+.vercel
+
+# Temporary files
+/tmp
+
+# Environment files (contains secrets)
+.env
+.env.local
+.env.production
+.env*.local
+
+# Backend sensitive config (use environment variables in production)
+# backend/config.js is tracked but secrets should be in env vars
+
+# Vercel
+.vercel
+
+# Temp files
+*.tmp
+/tmp
+dist/
