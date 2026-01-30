@@ -1,7 +1,8 @@
-import { kv } from '@vercel/kv';
-
 // Shared API Configuration for Vercel Serverless Functions
 // All sensitive values come from environment variables
+
+// In-memory token cache (for the lifetime of a single serverless function instance)
+let tokenCache = null;
 
 export const API_CONFIG = {
   hubspot: {
@@ -46,69 +47,75 @@ export const API_CONFIG = {
   },
 };
 
-// Token storage using Vercel KV
-const TOKEN_KEY = 'google_oauth_tokens';
+// Token storage - uses environment variable for refresh token + in-memory cache for access token
+// This approach doesn't require Vercel KV or any external storage
 
 export async function getTokens() {
-  try {
-    const tokens = await kv.get(TOKEN_KEY);
-    return tokens || { accessToken: null, refreshToken: null, expiresAt: null };
-  } catch (error) {
-    console.error('Error getting tokens from KV:', error);
-    return { accessToken: null, refreshToken: null, expiresAt: null };
+  // First, check if we have a refresh token in environment variables (permanent storage)
+  const envRefreshToken = process.env.GOOGLE_REFRESH_TOKEN || '';
+  
+  // Check in-memory cache
+  if (tokenCache) {
+    return {
+      accessToken: tokenCache.accessToken,
+      refreshToken: tokenCache.refreshToken || envRefreshToken,
+      expiresAt: tokenCache.expiresAt,
+    };
   }
+  
+  // If we have a refresh token in env, return it (access token will be fetched via refresh)
+  if (envRefreshToken) {
+    return {
+      accessToken: null,
+      refreshToken: envRefreshToken,
+      expiresAt: null,
+    };
+  }
+  
+  return { accessToken: null, refreshToken: null, expiresAt: null };
 }
 
 export async function setTokens(accessToken, refreshToken, expiresIn) {
-  try {
-    const tokens = {
-      accessToken,
-      refreshToken,
-      expiresAt: Date.now() + (expiresIn * 1000),
-    };
-    await kv.set(TOKEN_KEY, tokens);
-    return true;
-  } catch (error) {
-    console.error('Error setting tokens in KV:', error);
-    return false;
-  }
+  // Store in memory cache
+  tokenCache = {
+    accessToken,
+    refreshToken,
+    expiresAt: Date.now() + (expiresIn * 1000),
+  };
+  console.log('✅ Tokens stored in memory cache');
+  return true;
 }
 
 export async function clearTokens() {
-  try {
-    await kv.del(TOKEN_KEY);
-    return true;
-  } catch (error) {
-    console.error('Error clearing tokens from KV:', error);
-    return false;
-  }
+  tokenCache = null;
+  return true;
 }
 
 // Helper to get a valid access token (refreshes if needed)
 export async function getValidAccessToken() {
   const tokens = await getTokens();
   
-  if (!tokens.accessToken) {
+  // Check if we have a valid cached access token
+  if (tokens.accessToken && tokens.expiresAt && tokens.expiresAt > Date.now() + 300000) {
+    return tokens.accessToken;
+  }
+  
+  // Need to refresh - check if we have a refresh token
+  const refreshToken = tokens.refreshToken || process.env.GOOGLE_REFRESH_TOKEN;
+  
+  if (!refreshToken) {
+    console.log('❌ No refresh token available');
     return null;
   }
   
-  // Check if token is expired (with 5 minute buffer)
-  if (tokens.expiresAt && tokens.expiresAt < Date.now() + 300000) {
-    // Token is expired or about to expire, try to refresh
-    if (tokens.refreshToken) {
-      const newToken = await refreshAccessToken(tokens.refreshToken);
-      if (newToken) {
-        return newToken;
-      }
-    }
-    return null;
-  }
-  
-  return tokens.accessToken;
+  // Refresh the access token
+  const newToken = await refreshAccessToken(refreshToken);
+  return newToken;
 }
 
 async function refreshAccessToken(refreshToken) {
   try {
+    console.log('🔄 Refreshing Google access token...');
     const response = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -123,10 +130,11 @@ async function refreshAccessToken(refreshToken) {
     if (response.ok) {
       const data = await response.json();
       await setTokens(data.access_token, refreshToken, data.expires_in || 3600);
-      console.log('✅ Refreshed Google access token');
+      console.log('✅ Refreshed Google access token successfully');
       return data.access_token;
     } else {
-      console.error('❌ Failed to refresh token:', await response.text());
+      const errorText = await response.text();
+      console.error('❌ Failed to refresh token:', errorText);
     }
   } catch (error) {
     console.error('❌ Error refreshing token:', error);

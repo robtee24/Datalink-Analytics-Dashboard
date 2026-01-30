@@ -54,7 +54,7 @@ export default async function handler(req, res) {
 
     const tokens = await tokenResponse.json();
     
-    // Store tokens in Vercel KV
+    // Store tokens in memory cache
     const saved = await setTokens(
       tokens.access_token,
       tokens.refresh_token,
@@ -62,10 +62,13 @@ export default async function handler(req, res) {
     );
 
     if (!saved) {
-      console.warn('Warning: Could not save tokens to KV storage');
+      console.warn('Warning: Could not save tokens');
     }
 
-    // Return success HTML that closes popup
+    // Check if refresh token is already in env vars
+    const hasEnvRefreshToken = !!process.env.GOOGLE_REFRESH_TOKEN;
+    
+    // Return success HTML with instructions to save refresh token
     res.status(200).send(`
       <html>
         <head>
@@ -74,7 +77,7 @@ export default async function handler(req, res) {
             body { 
               font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
               text-align: center; 
-              padding: 50px;
+              padding: 20px;
               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
               min-height: 100vh;
               margin: 0;
@@ -87,22 +90,112 @@ export default async function handler(req, res) {
               padding: 40px;
               border-radius: 16px;
               box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+              max-width: 600px;
+              text-align: left;
             }
-            .success { color: #10b981; font-size: 64px; margin-bottom: 20px; }
-            h1 { color: #1e3a5f; margin-bottom: 10px; }
+            .success { color: #10b981; font-size: 48px; margin-bottom: 10px; text-align: center; }
+            h1 { color: #1e3a5f; margin-bottom: 10px; text-align: center; }
+            h2 { color: #1e3a5f; margin-top: 20px; font-size: 16px; }
             p { color: #64748b; }
+            .token-box {
+              background: #f1f5f9;
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+              padding: 12px;
+              font-family: monospace;
+              font-size: 11px;
+              word-break: break-all;
+              margin: 10px 0;
+              max-height: 100px;
+              overflow-y: auto;
+            }
+            .copy-btn {
+              background: #3b82f6;
+              color: white;
+              border: none;
+              padding: 8px 16px;
+              border-radius: 6px;
+              cursor: pointer;
+              font-size: 14px;
+            }
+            .copy-btn:hover { background: #2563eb; }
+            .steps { 
+              background: #fef3c7; 
+              border: 1px solid #fcd34d;
+              border-radius: 8px; 
+              padding: 15px; 
+              margin-top: 15px;
+            }
+            .steps ol { margin: 10px 0 0 0; padding-left: 20px; }
+            .steps li { margin: 5px 0; color: #92400e; }
+            .done { 
+              background: #d1fae5; 
+              border: 1px solid #6ee7b7;
+              border-radius: 8px; 
+              padding: 15px; 
+              margin-top: 15px;
+              text-align: center;
+            }
+            .done p { color: #065f46; margin: 0; }
+            .close-btn {
+              background: #10b981;
+              color: white;
+              border: none;
+              padding: 12px 24px;
+              border-radius: 6px;
+              cursor: pointer;
+              font-size: 16px;
+              margin-top: 20px;
+              display: block;
+              width: 100%;
+            }
+            .close-btn:hover { background: #059669; }
           </style>
         </head>
         <body>
           <div class="card">
             <div class="success">✓</div>
             <h1>Authorization Successful!</h1>
-            <p>You can close this window and refresh the dashboard.</p>
+            
+            ${hasEnvRefreshToken ? `
+              <div class="done">
+                <p><strong>✅ GOOGLE_REFRESH_TOKEN is already configured!</strong></p>
+                <p>You're all set. Close this window and refresh the dashboard.</p>
+              </div>
+            ` : `
+              <p>To make this authorization permanent, add the refresh token below to your Vercel environment variables.</p>
+              
+              <h2>Your Refresh Token:</h2>
+              <div class="token-box" id="token">${tokens.refresh_token || 'No refresh token received'}</div>
+              <button class="copy-btn" onclick="copyToken()">📋 Copy Token</button>
+              
+              <div class="steps">
+                <strong>⚠️ Important: Save this token to make authorization permanent</strong>
+                <ol>
+                  <li>Copy the token above</li>
+                  <li>Go to your <a href="https://vercel.com/dashboard" target="_blank">Vercel Dashboard</a></li>
+                  <li>Select your project → Settings → Environment Variables</li>
+                  <li>Add: <code>GOOGLE_REFRESH_TOKEN</code> = (paste the token)</li>
+                  <li>Redeploy your project</li>
+                </ol>
+              </div>
+            `}
+            
+            <button class="close-btn" onclick="closeWindow()">Close & Refresh Dashboard</button>
           </div>
           <script>
-            if (window.opener) {
-              window.opener.postMessage('oauth-complete', '*');
-              setTimeout(() => window.close(), 2000);
+            function copyToken() {
+              const token = document.getElementById('token').innerText;
+              navigator.clipboard.writeText(token).then(() => {
+                alert('Token copied to clipboard!');
+              });
+            }
+            function closeWindow() {
+              if (window.opener) {
+                window.opener.postMessage('oauth-complete', '*');
+                window.opener.location.reload();
+              }
+              window.close();
             }
           </script>
         </body>
