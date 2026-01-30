@@ -23,7 +23,7 @@ export default function handler(req, res) {
     `&response_type=code` +
     `&scope=${encodeURIComponent(scopes.join(' '))}` +
     `&access_type=offline` +
-    `&prompt=consent`;
+    `&prompt=${encodeURIComponent('select_account consent')}`;
 
   res.status(200).json({ authUrl });
 }
