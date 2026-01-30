@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { DateRange } from '../../types';
-import { fetchGoogleAnalytics, GoogleAnalyticsMetrics } from '../../services/googleAnalyticsService';
+import { fetchGoogleAnalytics } from '../../services/googleAnalyticsService';
+import type { GoogleAnalyticsMetrics } from '../../services/googleAnalyticsService';
 import SectionHeader from '../SectionHeader';
 import KPICard from '../KPICard';
 import LineChart from '../LineChart';
