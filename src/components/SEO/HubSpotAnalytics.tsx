@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { DateRange } from '../../types';
 import { fetchHubSpotAnalytics } from '../../services/hubspotService';
 import SectionHeader from '../SectionHeader';
@@ -16,12 +16,21 @@ export default function HubSpotAnalytics({ dateRange, compareDateRange }: HubSpo
     compare: any | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [progressMessage, setProgressMessage] = useState('');
+
+  const handleProgress = useCallback((progressValue: number, message: string) => {
+    setProgress(progressValue);
+    setProgressMessage(message);
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
+      setProgress(0);
+      setProgressMessage('Starting...');
       try {
-        const result = await fetchHubSpotAnalytics(dateRange, compareDateRange);
+        const result = await fetchHubSpotAnalytics(dateRange, compareDateRange, handleProgress);
         setData(result);
       } catch (error) {
         console.error('Error fetching HubSpot analytics:', error);
@@ -30,13 +39,28 @@ export default function HubSpotAnalytics({ dateRange, compareDateRange }: HubSpo
       }
     };
     loadData();
-  }, [dateRange, compareDateRange]);
+  }, [dateRange, compareDateRange, handleProgress]);
 
   if (loading) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6">
         <SectionHeader title="HubSpot Analytics" logoUrl="https://cdn.simpleicons.org/hubspot/FF7A59" />
-        <div className="text-center py-8">Loading...</div>
+        <div className="py-8">
+          <div className="flex flex-col items-center space-y-3">
+            <div className="w-full max-w-xs bg-gray-200 rounded-full h-2.5">
+              <div 
+                className="bg-orange-500 h-2.5 rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+            <div className="text-sm text-gray-600">
+              Loading... {progress}%
+            </div>
+            <div className="text-xs text-gray-400">
+              {progressMessage}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

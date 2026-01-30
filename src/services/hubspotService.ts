@@ -2,20 +2,37 @@ import type { HubSpotMetrics, DateRange } from '../types';
 import { format } from 'date-fns';
 import { API_BASE_URL } from '../config/api';
 
+export type ProgressCallback = (progress: number, message: string) => void;
+
 export const fetchHubSpotAnalytics = async (
   dateRange: DateRange,
-  compareDateRange: DateRange | null
+  compareDateRange: DateRange | null,
+  onProgress?: ProgressCallback
 ): Promise<{ current: HubSpotMetrics; compare: HubSpotMetrics | null }> => {
   const formatDate = (date: Date) => format(date, 'yyyy-MM-dd');
   const startDate = formatDate(dateRange.startDate);
   const endDate = formatDate(dateRange.endDate);
 
+  // Calculate total steps: analytics + forms for current, optionally for compare
+  const totalSteps = compareDateRange ? 4 : 2;
+  let completedSteps = 0;
+
+  const updateProgress = (message: string) => {
+    completedSteps++;
+    const progress = Math.round((completedSteps / totalSteps) * 100);
+    onProgress?.(progress, message);
+  };
+
   try {
-    // Fetch current period data
-    const [analyticsData, formsData] = await Promise.all([
-      fetchHubSpotAnalyticsData(startDate, endDate),
-      fetchHubSpotFormsData(startDate, endDate),
-    ]);
+    onProgress?.(0, 'Fetching analytics data...');
+
+    // Fetch current period analytics
+    const analyticsData = await fetchHubSpotAnalyticsData(startDate, endDate);
+    updateProgress('Analytics data loaded');
+
+    // Fetch current period forms
+    const formsData = await fetchHubSpotFormsData(startDate, endDate);
+    updateProgress('Forms data loaded');
 
     const current: HubSpotMetrics = {
       uniqueVisitors: analyticsData.uniqueVisitors,
@@ -32,10 +49,12 @@ export const fetchHubSpotAnalytics = async (
       const compareStartDate = formatDate(compareDateRange.startDate);
       const compareEndDate = formatDate(compareDateRange.endDate);
 
-      const [compareAnalyticsData, compareFormsData] = await Promise.all([
-        fetchHubSpotAnalyticsData(compareStartDate, compareEndDate),
-        fetchHubSpotFormsData(compareStartDate, compareEndDate),
-      ]);
+      onProgress?.(50, 'Fetching comparison analytics...');
+      const compareAnalyticsData = await fetchHubSpotAnalyticsData(compareStartDate, compareEndDate);
+      updateProgress('Comparison analytics loaded');
+
+      const compareFormsData = await fetchHubSpotFormsData(compareStartDate, compareEndDate);
+      updateProgress('Comparison forms loaded');
 
       compare = {
         uniqueVisitors: compareAnalyticsData.uniqueVisitors,
@@ -47,6 +66,7 @@ export const fetchHubSpotAnalytics = async (
       };
     }
 
+    onProgress?.(100, 'Complete');
     return { current, compare };
   } catch (error: any) {
     console.error('Error fetching HubSpot analytics:', error);
@@ -54,7 +74,7 @@ export const fetchHubSpotAnalytics = async (
       message: error?.message,
       stack: error?.stack,
     });
-    console.warn('💡 Tip: Check if HubSpot API allows CORS. If you see CORS errors, you need a backend proxy.');
+    onProgress?.(100, 'Error loading data');
     // Return unavailable data (will show N/A)
     return getUnavailableData(dateRange, compareDateRange);
   }
