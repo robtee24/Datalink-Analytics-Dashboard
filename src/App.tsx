@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DatePeriodSelector from './components/DatePeriodSelector';
 import HubSpotAnalytics from './components/SEO/HubSpotAnalytics';
+import GoogleAnalytics from './components/SEO/GoogleAnalytics';
 import GoogleSearchConsole from './components/SEO/GoogleSearchConsole';
 import GoogleMyBusiness from './components/SEO/GoogleMyBusiness';
 import MetaAds from './components/Ads/MetaAds';
@@ -84,6 +85,7 @@ function App() {
           <div className="space-y-6">
             <h2 className="text-2xl font-semibold text-gray-800">SEO Tracking</h2>
             <HubSpotAnalytics dateRange={dateRange} compareDateRange={compareDateRange} />
+            <GoogleAnalytics dateRange={dateRange} compareDateRange={compareDateRange} />
             <GoogleSearchConsole dateRange={dateRange} compareDateRange={compareDateRange} />
             <GoogleMyBusiness dateRange={dateRange} compareDateRange={compareDateRange} />
           </div>

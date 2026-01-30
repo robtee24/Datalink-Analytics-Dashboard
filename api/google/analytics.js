@@ -25,7 +25,8 @@ export default async function handler(req, res) {
       });
     }
 
-    const response = await fetch(
+    // Fetch aggregate metrics
+    const aggregateResponse = await fetch(
       `${API_CONFIG.googleAnalytics.baseUrl}/v1beta/properties/${propertyId}:runReport`,
       {
         method: 'POST',
@@ -39,36 +40,117 @@ export default async function handler(req, res) {
             { name: 'activeUsers' },
             { name: 'bounceRate' },
             { name: 'averageSessionDuration' },
+            { name: 'sessions' },
+            { name: 'screenPageViews' },
           ],
         }),
       }
     );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Google Analytics error:', response.status, errorText);
+    // Fetch daily data for chart
+    const dailyResponse = await fetch(
+      `${API_CONFIG.googleAnalytics.baseUrl}/v1beta/properties/${propertyId}:runReport`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dateRanges: [{ startDate, endDate }],
+          dimensions: [{ name: 'date' }],
+          metrics: [
+            { name: 'activeUsers' },
+          ],
+          orderBys: [{ dimension: { dimensionName: 'date' } }],
+        }),
+      }
+    );
+
+    // Fetch top pages
+    const pagesResponse = await fetch(
+      `${API_CONFIG.googleAnalytics.baseUrl}/v1beta/properties/${propertyId}:runReport`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dateRanges: [{ startDate, endDate }],
+          dimensions: [{ name: 'pagePath' }],
+          metrics: [
+            { name: 'screenPageViews' },
+            { name: 'activeUsers' },
+          ],
+          orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+          limit: 10,
+        }),
+      }
+    );
+
+    let uniqueVisitors = null;
+    let bounceRate = null;
+    let timeOnPage = null;
+    let sessions = null;
+    let pageViews = null;
+
+    if (aggregateResponse.ok) {
+      const data = await aggregateResponse.json();
+      const row = data.rows?.[0];
       
-      // Return null data instead of error for graceful fallback
-      return res.status(200).json({
-        uniqueVisitors: null,
-        bounceRate: null,
-        timeOnPage: null,
-        totalLeadSubmissions: null,
-        leadSubmissionsByPage: [],
-        uniqueVisitorsHistory: [],
-      });
+      uniqueVisitors = row?.metricValues?.[0]?.value ? parseInt(row.metricValues[0].value) : null;
+      bounceRate = row?.metricValues?.[1]?.value ? parseFloat(row.metricValues[1].value) * 100 : null;
+      timeOnPage = row?.metricValues?.[2]?.value ? Math.round(parseFloat(row.metricValues[2].value)) : null;
+      sessions = row?.metricValues?.[3]?.value ? parseInt(row.metricValues[3].value) : null;
+      pageViews = row?.metricValues?.[4]?.value ? parseInt(row.metricValues[4].value) : null;
+    } else {
+      const errorText = await aggregateResponse.text();
+      console.error('Google Analytics aggregate error:', aggregateResponse.status, errorText);
     }
 
-    const data = await response.json();
-    const row = data.rows?.[0];
-    
+    // Parse daily data
+    let uniqueVisitorsHistory = [];
+    if (dailyResponse.ok) {
+      const dailyData = await dailyResponse.json();
+      uniqueVisitorsHistory = (dailyData.rows || []).map(row => {
+        const dateStr = row.dimensionValues?.[0]?.value || '';
+        // Format YYYYMMDD to YYYY-MM-DD
+        const formattedDate = dateStr.length === 8 
+          ? `${dateStr.slice(0,4)}-${dateStr.slice(4,6)}-${dateStr.slice(6,8)}`
+          : dateStr;
+        return {
+          date: formattedDate,
+          value: parseInt(row.metricValues?.[0]?.value || '0'),
+        };
+      });
+    } else {
+      const errorText = await dailyResponse.text();
+      console.error('Google Analytics daily error:', dailyResponse.status, errorText);
+    }
+
+    // Parse top pages
+    let topPages = [];
+    if (pagesResponse.ok) {
+      const pagesData = await pagesResponse.json();
+      topPages = (pagesData.rows || []).map(row => ({
+        page: row.dimensionValues?.[0]?.value || '',
+        pageViews: parseInt(row.metricValues?.[0]?.value || '0'),
+        users: parseInt(row.metricValues?.[1]?.value || '0'),
+      }));
+    } else {
+      const errorText = await pagesResponse.text();
+      console.error('Google Analytics pages error:', pagesResponse.status, errorText);
+    }
+
     res.status(200).json({
-      uniqueVisitors: row?.metricValues?.[0]?.value ? parseInt(row.metricValues[0].value) : null,
-      bounceRate: row?.metricValues?.[1]?.value ? parseFloat(row.metricValues[1].value) * 100 : null,
-      timeOnPage: row?.metricValues?.[2]?.value ? parseFloat(row.metricValues[2].value) : null,
-      totalLeadSubmissions: null,
-      leadSubmissionsByPage: [],
-      uniqueVisitorsHistory: [],
+      uniqueVisitors,
+      bounceRate,
+      timeOnPage,
+      sessions,
+      pageViews,
+      uniqueVisitorsHistory,
+      topPages,
     });
   } catch (error) {
     console.error('Google Analytics API error:', error);
@@ -76,9 +158,10 @@ export default async function handler(req, res) {
       uniqueVisitors: null,
       bounceRate: null,
       timeOnPage: null,
-      totalLeadSubmissions: null,
-      leadSubmissionsByPage: [],
+      sessions: null,
+      pageViews: null,
       uniqueVisitorsHistory: [],
+      topPages: [],
     });
   }
 }
