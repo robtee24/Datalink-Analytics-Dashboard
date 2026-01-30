@@ -49,15 +49,17 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    const pages = (data.rows || []).map(row => ({
-      url: row.keys[1],
+    
+    // Return in format frontend expects (rows with keys array)
+    const rows = (data.rows || []).map(row => ({
+      keys: row.keys, // [query, page]
       clicks: row.clicks || 0,
       impressions: row.impressions || 0,
       ctr: (row.ctr || 0) * 100,
       position: row.position || 0,
     }));
 
-    res.status(200).json({ pages });
+    res.status(200).json({ rows });
   } catch (error) {
     console.error('Search Console keyword-pages API error:', error);
     res.status(500).json({ 
