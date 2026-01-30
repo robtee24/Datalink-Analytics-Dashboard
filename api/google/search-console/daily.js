@@ -50,7 +50,10 @@ export default async function handler(req, res) {
       position: row.position || 0,
     }));
 
-    res.status(200).json({ dailyData });
+    res.status(200).json({ 
+      rows: dailyData, // Frontend expects 'rows'
+      dailyData 
+    });
   } catch (error) {
     console.error('Search Console daily API error:', error);
     res.status(500).json({ 

@@ -83,6 +83,7 @@ export default async function handler(req, res) {
     const totalImpressions = keywords.reduce((sum, k) => sum + k.impressions, 0);
 
     res.status(200).json({
+      rows: keywords, // Frontend expects 'rows'
       keywords,
       totalClicks,
       totalImpressions,
