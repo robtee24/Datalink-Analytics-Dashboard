@@ -43,25 +43,24 @@ export default async function handler(req, res) {
     const formattedStart = formatDateToHubSpot(startDate);
     const formattedEnd = formatDateToHubSpot(endDate);
 
-    // Fetch totals for the period using HubSpot Analytics API v2
-    // Using 'sessions' breakdown which provides visitor/session level metrics
+    // Fetch totals for visitors and submissions
     const totalsUrl = `${API_CONFIG.hubspot.baseUrl}/analytics/v2/reports/totals/total?start=${formattedStart}&end=${formattedEnd}`;
     
-    // Also fetch sessions breakdown for more detailed metrics
-    const sessionsUrl = `${API_CONFIG.hubspot.baseUrl}/analytics/v2/reports/sessions/total?start=${formattedStart}&end=${formattedEnd}`;
+    // Fetch sources/total for bounceRate and timePerSession (these metrics are in sources breakdown)
+    const sourcesUrl = `${API_CONFIG.hubspot.baseUrl}/analytics/v2/reports/sources/total?start=${formattedStart}&end=${formattedEnd}`;
     
-    // Fetch daily breakdown for the chart
-    const dailyUrl = `${API_CONFIG.hubspot.baseUrl}/analytics/v2/reports/totals/daily?start=${formattedStart}&end=${formattedEnd}`;
+    // Fetch summarized daily breakdown for the chart (totals/daily requires summarize/)
+    const dailyUrl = `${API_CONFIG.hubspot.baseUrl}/analytics/v2/reports/totals/summarize/daily?start=${formattedStart}&end=${formattedEnd}`;
 
     // Make all requests in parallel
-    const [totalsResponse, sessionsResponse, dailyResponse] = await Promise.all([
+    const [totalsResponse, sourcesResponse, dailyResponse] = await Promise.all([
       fetch(totalsUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       }),
-      fetch(sessionsUrl, {
+      fetch(sourcesUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -82,18 +81,14 @@ export default async function handler(req, res) {
     let uniqueVisitorsHistory = [];
     let rawResponses = {};
 
-    // Parse totals response
+    // Parse totals response for visitors and submissions
     if (totalsResponse.ok) {
       const totalsData = await totalsResponse.json();
       rawResponses.totals = totalsData;
-      console.log('HubSpot totals response:', JSON.stringify(totalsData, null, 2));
       
-      // The response structure has a 'totals' object with the metrics
       const totals = totalsData.totals || totalsData;
       
       uniqueVisitors = extractMetric(totals, 'visitors', 'visits', 'rawViews');
-      bounceRate = extractMetric(totals, 'bounceRate', 'pageBounceRate');
-      timeOnPage = extractMetric(totals, 'timePerSession', 'timePerPageview', 'avgTimeOnPage');
       totalLeadSubmissions = extractMetric(totals, 'submissions', 'leads', 'contacts');
     } else {
       const errorText = await totalsResponse.text();
@@ -101,35 +96,31 @@ export default async function handler(req, res) {
       rawResponses.totalsError = { status: totalsResponse.status, error: errorText };
     }
 
-    // Parse sessions response for additional metrics (may have bounce rate, time on page)
-    if (sessionsResponse.ok) {
-      const sessionsData = await sessionsResponse.json();
-      rawResponses.sessions = sessionsData;
-      console.log('HubSpot sessions response:', JSON.stringify(sessionsData, null, 2));
+    // Parse sources response for bounceRate and timePerSession
+    if (sourcesResponse.ok) {
+      const sourcesData = await sourcesResponse.json();
+      rawResponses.sources = sourcesData;
       
-      const sessionTotals = sessionsData.totals || sessionsData;
+      const sourceTotals = sourcesData.totals || sourcesData;
       
-      // Only use sessions data if totals didn't have it
-      if (bounceRate === null) {
-        bounceRate = extractMetric(sessionTotals, 'bounceRate', 'pageBounceRate');
-      }
-      if (timeOnPage === null) {
-        timeOnPage = extractMetric(sessionTotals, 'timePerSession', 'timePerPageview', 'avgTimeOnPage');
-      }
+      // Sources endpoint has bounceRate and timePerSession
+      bounceRate = extractMetric(sourceTotals, 'bounceRate', 'pageBounceRate');
+      timeOnPage = extractMetric(sourceTotals, 'timePerSession', 'time', 'timePerPageview');
+      
+      // Fallback for visitors if totals didn't have it
       if (uniqueVisitors === null) {
-        uniqueVisitors = extractMetric(sessionTotals, 'visitors', 'visits');
+        uniqueVisitors = extractMetric(sourceTotals, 'visitors', 'visits');
       }
     } else {
-      const errorText = await sessionsResponse.text();
-      console.error('HubSpot Analytics sessions error:', sessionsResponse.status, errorText);
-      rawResponses.sessionsError = { status: sessionsResponse.status, error: errorText };
+      const errorText = await sourcesResponse.text();
+      console.error('HubSpot Analytics sources error:', sourcesResponse.status, errorText);
+      rawResponses.sourcesError = { status: sourcesResponse.status, error: errorText };
     }
 
     // Parse daily breakdown for chart data
     if (dailyResponse.ok) {
       const dailyData = await dailyResponse.json();
       rawResponses.daily = dailyData;
-      console.log('HubSpot daily response:', JSON.stringify(dailyData, null, 2));
       
       // The response has a 'breakdowns' array with daily data
       const breakdowns = dailyData.breakdowns || dailyData.results || [];
@@ -146,7 +137,7 @@ export default async function handler(req, res) {
           date: formattedDate,
           value: extractMetric(day, 'visitors', 'visits', 'rawViews') || 0,
         };
-      }).filter(item => item.date); // Filter out any invalid entries
+      }).filter(item => item.date && item.date.length > 0); // Filter out invalid entries
       
       // Sort by date ascending
       uniqueVisitorsHistory.sort((a, b) => a.date.localeCompare(b.date));
@@ -156,14 +147,14 @@ export default async function handler(req, res) {
       rawResponses.dailyError = { status: dailyResponse.status, error: errorText };
     }
 
-    // Convert timeOnPage from milliseconds to seconds if needed (HubSpot returns ms)
-    if (timeOnPage !== null && timeOnPage > 1000) {
-      timeOnPage = Math.round(timeOnPage / 1000);
+    // Convert bounceRate to percentage (HubSpot returns as decimal 0-1)
+    if (bounceRate !== null && bounceRate >= 0 && bounceRate <= 1) {
+      bounceRate = Math.round(bounceRate * 1000) / 10; // e.g., 0.862 -> 86.2
     }
 
-    // Convert bounceRate to percentage if it's a decimal (0-1 range)
-    if (bounceRate !== null && bounceRate > 0 && bounceRate <= 1) {
-      bounceRate = bounceRate * 100;
+    // Round timeOnPage to whole seconds
+    if (timeOnPage !== null) {
+      timeOnPage = Math.round(timeOnPage);
     }
 
     return res.status(200).json({
@@ -173,8 +164,6 @@ export default async function handler(req, res) {
       totalLeadSubmissions,
       leadSubmissionsByPage: [],
       uniqueVisitorsHistory,
-      // Include raw responses for debugging (can be removed in production)
-      _debug: rawResponses,
     });
   } catch (error) {
     console.error('HubSpot Analytics error:', error);
