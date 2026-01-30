@@ -28,9 +28,9 @@ export default async function handler(req, res) {
   // Test multiple endpoints
   const endpoints = [
     { name: 'totals_total', url: `/analytics/v2/reports/totals/total?start=${start}&end=${end}` },
-    { name: 'totals_daily', url: `/analytics/v2/reports/totals/daily?start=${start}&end=${end}` },
+    { name: 'totals_summarize_daily', url: `/analytics/v2/reports/totals/summarize/daily?start=${start}&end=${end}` },
+    { name: 'sources_daily', url: `/analytics/v2/reports/sources/daily?start=${start}&end=${end}` },
     { name: 'sources_total', url: `/analytics/v2/reports/sources/total?start=${start}&end=${end}` },
-    { name: 'contacts', url: `/crm/v3/objects/contacts?limit=1` },
   ];
 
   for (const endpoint of endpoints) {
