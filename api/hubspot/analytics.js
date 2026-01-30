@@ -122,22 +122,19 @@ export default async function handler(req, res) {
       const dailyData = await dailyResponse.json();
       rawResponses.daily = dailyData;
       
-      // The response has a 'breakdowns' array with daily data
-      const breakdowns = dailyData.breakdowns || dailyData.results || [];
-      
-      uniqueVisitorsHistory = breakdowns.map((day) => {
-        // The 'breakdown' field contains the date in YYYYMMDD format
-        const dateStr = String(day.breakdown || day.date || '');
-        // Convert YYYYMMDD to yyyy-MM-dd format
-        const formattedDate = dateStr.length === 8 
-          ? `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`
-          : dateStr;
-        
-        return {
-          date: formattedDate,
-          value: extractMetric(day, 'visitors', 'visits', 'rawViews') || 0,
-        };
-      }).filter(item => item.date && item.date.length > 0); // Filter out invalid entries
+      // The summarize/daily response format is: { "2025-12-31": [{ visitors: 52, ... }], ... }
+      // Each date is a key, and the value is an array with metrics
+      uniqueVisitorsHistory = Object.entries(dailyData)
+        .filter(([key]) => /^\d{4}-\d{2}-\d{2}$/.test(key)) // Only process date keys (YYYY-MM-DD format)
+        .map(([date, dataArray]) => {
+          // dataArray is an array, get the first element
+          const dayData = Array.isArray(dataArray) ? dataArray[0] : dataArray;
+          return {
+            date: date,
+            value: extractMetric(dayData, 'visitors', 'visits', 'rawViews') || 0,
+          };
+        })
+        .filter(item => item.date && item.value !== undefined);
       
       // Sort by date ascending
       uniqueVisitorsHistory.sort((a, b) => a.date.localeCompare(b.date));
