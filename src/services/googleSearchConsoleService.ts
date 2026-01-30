@@ -166,9 +166,11 @@ function parseSearchConsoleResponse(data: any, dailyData: any, pagesIndexedData:
   // Process keywords from query-level data
   if (data.rows && Array.isArray(data.rows)) {
     data.rows.forEach((row: any) => {
-      const keyword = row.keys?.[0] || '';
+      // Backend returns 'keyword' directly, or 'keys[0]' from raw API
+      const keyword = row.keyword || row.keys?.[0] || '';
       const impressions = parseInt(row.impressions || '0', 10);
       const clicks = parseInt(row.clicks || '0', 10);
+      // CTR might already be converted to percentage by backend
       const ctr = parseFloat(row.ctr || '0');
       const position = parseFloat(row.position || '0');
 
@@ -177,7 +179,8 @@ function parseSearchConsoleResponse(data: any, dailyData: any, pagesIndexedData:
         position: position > 0 ? Math.round(position) : null,
         impressions: impressions >= 0 ? impressions : null, // Allow 0 values
         clicks: clicks >= 0 ? clicks : null, // Allow 0 values
-        ctr: ctr >= 0 ? ctr * 100 : null, // Convert to percentage, allow 0
+        // Backend already converts to percentage, but raw API returns 0-1 range
+        ctr: ctr >= 0 ? (ctr > 1 ? ctr : ctr * 100) : null,
       });
     });
   }
@@ -193,7 +196,8 @@ function parseSearchConsoleResponse(data: any, dailyData: any, pagesIndexedData:
   // Use daily data if available, otherwise fall back to query-level totals
   if (dailyData && dailyData.rows && Array.isArray(dailyData.rows)) {
     dailyData.rows.forEach((row: any) => {
-      const dateStr = row.keys?.[0] || '';
+      // Backend returns 'date' directly, or 'keys[0]' from raw API
+      const dateStr = row.date || row.keys?.[0] || '';
       const impressions = parseInt(row.impressions || '0', 10);
       const clicks = parseInt(row.clicks || '0', 10);
       
