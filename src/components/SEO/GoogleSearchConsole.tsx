@@ -513,21 +513,22 @@ export default function GoogleSearchConsole({ dateRange, compareDateRange, loadT
                   const compareKeyword = compareKeywordsMap.get(keyword.keyword);
                   
                   // Helper function to determine color based on comparison
+                  // Colors indicate whether current period IMPROVED vs compare period
                   const getCompareColor = (metric: string, current: number | null, compare: number | null): string => {
                     if (current === null || current === undefined || compare === null || compare === undefined) {
-                      return 'text-red-400'; // Default to red if data is missing
+                      return 'text-gray-400'; // Default to gray if data is missing
                     }
                     
                     if (metric === 'position') {
-                      // For position: lower is better
-                      // If compare > current, it's worse (red)
-                      // If compare < current, it's better (green)
-                      return compare > current ? 'text-red-400' : compare < current ? 'text-green-400' : 'text-red-400';
+                      // For position: lower is better (rank 1 > rank 10)
+                      // If compare > current, we improved (e.g., was rank 10, now rank 5) = GREEN
+                      // If compare < current, we got worse (e.g., was rank 5, now rank 10) = RED
+                      return compare > current ? 'text-green-400' : compare < current ? 'text-red-400' : 'text-gray-400';
                     } else {
                       // For impressions, clicks, CTR: higher is better
-                      // If compare > current, it's better (green)
-                      // If compare < current, it's worse (red)
-                      return compare > current ? 'text-green-400' : compare < current ? 'text-red-400' : 'text-red-400';
+                      // If compare < current, we improved (e.g., had 100, now 200) = GREEN
+                      // If compare > current, we got worse (e.g., had 200, now 100) = RED
+                      return compare < current ? 'text-green-400' : compare > current ? 'text-red-400' : 'text-gray-400';
                     }
                   };
                   
