@@ -7,9 +7,10 @@ import KPICard from '../KPICard';
 interface GoogleMyBusinessProps {
   dateRange: DateRange;
   compareDateRange: DateRange | null;
+  loadTrigger: number;
 }
 
-export default function GoogleMyBusiness({ dateRange, compareDateRange }: GoogleMyBusinessProps) {
+export default function GoogleMyBusiness({ dateRange, compareDateRange, loadTrigger }: GoogleMyBusinessProps) {
   const [data, setData] = useState<{
     current: any;
     compare: any | null;
@@ -17,6 +18,8 @@ export default function GoogleMyBusiness({ dateRange, compareDateRange }: Google
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (loadTrigger === 0) return; // Don't load until triggered
+    
     const loadData = async () => {
       setLoading(true);
       try {
@@ -47,7 +50,7 @@ export default function GoogleMyBusiness({ dateRange, compareDateRange }: Google
       }
     };
     loadData();
-  }, [dateRange, compareDateRange]);
+  }, [loadTrigger, dateRange, compareDateRange]);
 
   if (loading) {
     return (

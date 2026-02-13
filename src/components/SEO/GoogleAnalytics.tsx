@@ -9,9 +9,10 @@ import LineChart from '../LineChart';
 interface GoogleAnalyticsProps {
   dateRange: DateRange;
   compareDateRange: DateRange | null;
+  loadTrigger: number;
 }
 
-export default function GoogleAnalytics({ dateRange, compareDateRange }: GoogleAnalyticsProps) {
+export default function GoogleAnalytics({ dateRange, compareDateRange, loadTrigger }: GoogleAnalyticsProps) {
   const [data, setData] = useState<{
     current: GoogleAnalyticsMetrics;
     compare: GoogleAnalyticsMetrics | null;
@@ -19,6 +20,8 @@ export default function GoogleAnalytics({ dateRange, compareDateRange }: GoogleA
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (loadTrigger === 0) return; // Don't load until triggered
+    
     const loadData = async () => {
       setLoading(true);
       try {
@@ -31,7 +34,7 @@ export default function GoogleAnalytics({ dateRange, compareDateRange }: GoogleA
       }
     };
     loadData();
-  }, [dateRange, compareDateRange]);
+  }, [loadTrigger, dateRange, compareDateRange]);
 
   if (loading) {
     return (

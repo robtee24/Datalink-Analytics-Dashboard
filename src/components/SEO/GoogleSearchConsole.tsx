@@ -9,9 +9,10 @@ import LineChart from '../LineChart';
 interface GoogleSearchConsoleProps {
   dateRange: DateRange;
   compareDateRange: DateRange | null;
+  loadTrigger: number;
 }
 
-export default function GoogleSearchConsole({ dateRange, compareDateRange }: GoogleSearchConsoleProps) {
+export default function GoogleSearchConsole({ dateRange, compareDateRange, loadTrigger }: GoogleSearchConsoleProps) {
   const [data, setData] = useState<{
     current: any;
     compare: any | null;
@@ -33,6 +34,8 @@ export default function GoogleSearchConsole({ dateRange, compareDateRange }: Goo
   const itemsPerPage = 20;
 
   useEffect(() => {
+    if (loadTrigger === 0) return; // Don't load until triggered
+    
     const loadData = async () => {
       setLoading(true);
       try {
@@ -64,7 +67,7 @@ export default function GoogleSearchConsole({ dateRange, compareDateRange }: Goo
       }
     };
     loadData();
-  }, [dateRange, compareDateRange]);
+  }, [loadTrigger, dateRange, compareDateRange]);
 
   if (loading) {
     return (

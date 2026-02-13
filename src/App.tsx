@@ -20,6 +20,13 @@ function App() {
   const [compareDateRange, setCompareDateRange] = useState<DateRange | null>(null);
   const [showOAuthModal, setShowOAuthModal] = useState(false);
   const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
+  const [loadTrigger, setLoadTrigger] = useState(0); // Increments when user clicks "Load Data"
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+
+  const handleLoadData = () => {
+    setLoadTrigger(prev => prev + 1);
+    setHasLoadedOnce(true);
+  };
 
   useEffect(() => {
     // Check if we should show the OAuth modal on first load
@@ -73,32 +80,53 @@ function App() {
           </button>
         </div>
         
-        <DatePeriodSelector
-          dateRange={dateRange}
-          compareDateRange={compareDateRange}
-          onDateRangeChange={setDateRange}
-          onCompareDateRangeChange={setCompareDateRange}
-        />
-
-        <div className="space-y-8 mt-8">
-          {/* SEO Tracking Sections */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-semibold text-gray-800">SEO Tracking</h2>
-            <HubSpotAnalytics dateRange={dateRange} compareDateRange={compareDateRange} />
-            <GoogleAnalytics dateRange={dateRange} compareDateRange={compareDateRange} />
-            <GoogleSearchConsole dateRange={dateRange} compareDateRange={compareDateRange} />
-            <GoogleMyBusiness dateRange={dateRange} compareDateRange={compareDateRange} />
-          </div>
-
-          {/* Paid Ads Tracking Sections */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-semibold text-gray-800">Paid Ads Tracking</h2>
-            <MetaAds dateRange={dateRange} compareDateRange={compareDateRange} />
-            <RedditAds dateRange={dateRange} compareDateRange={compareDateRange} />
-            <GoogleAds dateRange={dateRange} compareDateRange={compareDateRange} />
-            <LinkedInAds dateRange={dateRange} compareDateRange={compareDateRange} />
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <DatePeriodSelector
+            dateRange={dateRange}
+            compareDateRange={compareDateRange}
+            onDateRangeChange={setDateRange}
+            onCompareDateRangeChange={setCompareDateRange}
+          />
+          <div className="mt-4 flex justify-center">
+            <button
+              onClick={handleLoadData}
+              className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-semibold flex items-center gap-2"
+            >
+              <span>📊</span>
+              <span>{hasLoadedOnce ? 'Refresh Data' : 'Load Data'}</span>
+            </button>
           </div>
         </div>
+
+        {!hasLoadedOnce ? (
+          <div className="bg-white rounded-lg shadow-md p-12 text-center">
+            <div className="text-gray-400 text-6xl mb-4">📊</div>
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">Set Date Range and Load Data</h3>
+            <p className="text-gray-500">
+              Select your desired date range above, then click "Load Data" to fetch analytics.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {/* SEO Tracking Sections */}
+            <div className="space-y-6">
+              <h2 className="text-2xl font-semibold text-gray-800">SEO Tracking</h2>
+              <HubSpotAnalytics dateRange={dateRange} compareDateRange={compareDateRange} loadTrigger={loadTrigger} />
+              <GoogleAnalytics dateRange={dateRange} compareDateRange={compareDateRange} loadTrigger={loadTrigger} />
+              <GoogleSearchConsole dateRange={dateRange} compareDateRange={compareDateRange} loadTrigger={loadTrigger} />
+              <GoogleMyBusiness dateRange={dateRange} compareDateRange={compareDateRange} loadTrigger={loadTrigger} />
+            </div>
+
+            {/* Paid Ads Tracking Sections */}
+            <div className="space-y-6">
+              <h2 className="text-2xl font-semibold text-gray-800">Paid Ads Tracking</h2>
+              <MetaAds dateRange={dateRange} compareDateRange={compareDateRange} loadTrigger={loadTrigger} />
+              <RedditAds dateRange={dateRange} compareDateRange={compareDateRange} loadTrigger={loadTrigger} />
+              <GoogleAds dateRange={dateRange} compareDateRange={compareDateRange} loadTrigger={loadTrigger} />
+              <LinkedInAds dateRange={dateRange} compareDateRange={compareDateRange} loadTrigger={loadTrigger} />
+            </div>
+          </div>
+        )}
       </div>
 
       <OAuthModal isOpen={showOAuthModal} onClose={handleCloseOAuthModal} />

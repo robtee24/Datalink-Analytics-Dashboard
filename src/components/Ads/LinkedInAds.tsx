@@ -7,9 +7,10 @@ import KPICard from '../KPICard';
 interface LinkedInAdsProps {
   dateRange: DateRange;
   compareDateRange: DateRange | null;
+  loadTrigger: number;
 }
 
-export default function LinkedInAds({ dateRange, compareDateRange }: LinkedInAdsProps) {
+export default function LinkedInAds({ dateRange, compareDateRange, loadTrigger }: LinkedInAdsProps) {
   const [data, setData] = useState<{
     current: any;
     compare: any | null;
@@ -25,6 +26,8 @@ export default function LinkedInAds({ dateRange, compareDateRange }: LinkedInAds
   const itemsPerPage = 10;
 
   useEffect(() => {
+    if (loadTrigger === 0) return; // Don't load until triggered
+    
     const loadData = async () => {
       setLoading(true);
       try {
@@ -37,7 +40,7 @@ export default function LinkedInAds({ dateRange, compareDateRange }: LinkedInAds
       }
     };
     loadData();
-  }, [dateRange, compareDateRange]);
+  }, [loadTrigger, dateRange, compareDateRange]);
 
   if (loading) {
     return (

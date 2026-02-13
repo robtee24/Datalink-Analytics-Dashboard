@@ -8,9 +8,10 @@ import LineChart from '../LineChart';
 interface HubSpotAnalyticsProps {
   dateRange: DateRange;
   compareDateRange: DateRange | null;
+  loadTrigger: number;
 }
 
-export default function HubSpotAnalytics({ dateRange, compareDateRange }: HubSpotAnalyticsProps) {
+export default function HubSpotAnalytics({ dateRange, compareDateRange, loadTrigger }: HubSpotAnalyticsProps) {
   const [data, setData] = useState<{
     current: any;
     compare: any | null;
@@ -25,6 +26,8 @@ export default function HubSpotAnalytics({ dateRange, compareDateRange }: HubSpo
   }, []);
 
   useEffect(() => {
+    if (loadTrigger === 0) return; // Don't load until triggered
+    
     const loadData = async () => {
       setLoading(true);
       setProgress(0);
@@ -39,7 +42,7 @@ export default function HubSpotAnalytics({ dateRange, compareDateRange }: HubSpo
       }
     };
     loadData();
-  }, [dateRange, compareDateRange, handleProgress]);
+  }, [loadTrigger, dateRange, compareDateRange, handleProgress]);
 
   if (loading) {
     return (
