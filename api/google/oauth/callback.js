@@ -67,8 +67,10 @@ export default async function handler(req, res) {
 
     // Check if refresh token is already in env vars
     const hasEnvRefreshToken = !!process.env.GOOGLE_REFRESH_TOKEN;
+    const hasNewRefreshToken = !!tokens.refresh_token;
     
     // Return success HTML with instructions to save refresh token
+    // ALWAYS show the new token if we received one, so user can update expired tokens
     res.status(200).send(`
       <html>
         <head>
@@ -128,15 +130,15 @@ export default async function handler(req, res) {
             }
             .steps ol { margin: 10px 0 0 0; padding-left: 20px; }
             .steps li { margin: 5px 0; color: #92400e; }
-            .done { 
-              background: #d1fae5; 
-              border: 1px solid #6ee7b7;
-              border-radius: 8px; 
-              padding: 15px; 
+            .warning {
+              background: #fef3c7;
+              border: 1px solid #f59e0b;
+              border-radius: 8px;
+              padding: 15px;
               margin-top: 15px;
               text-align: center;
             }
-            .done p { color: #065f46; margin: 0; }
+            .warning p { color: #92400e; margin: 5px 0; }
             .close-btn {
               background: #10b981;
               color: white;
@@ -157,28 +159,35 @@ export default async function handler(req, res) {
             <div class="success">✓</div>
             <h1>Authorization Successful!</h1>
             
-            ${hasEnvRefreshToken ? `
-              <div class="done">
-                <p><strong>✅ GOOGLE_REFRESH_TOKEN is already configured!</strong></p>
-                <p>You're all set. Close this window and refresh the dashboard.</p>
-              </div>
-            ` : `
+            ${hasNewRefreshToken ? `
+              ${hasEnvRefreshToken ? `
+                <div class="warning">
+                  <p><strong>⚠️ A GOOGLE_REFRESH_TOKEN already exists in Vercel.</strong></p>
+                  <p>If your Google data isn't loading, the old token may have expired. Update it with the new token below.</p>
+                </div>
+              ` : ''}
+              
               <p>To make this authorization permanent, add the refresh token below to your Vercel environment variables.</p>
               
-              <h2>Your Refresh Token:</h2>
-              <div class="token-box" id="token">${tokens.refresh_token || 'No refresh token received'}</div>
+              <h2>Your New Refresh Token:</h2>
+              <div class="token-box" id="token">${tokens.refresh_token}</div>
               <button class="copy-btn" onclick="copyToken()">📋 Copy Token</button>
               
               <div class="steps">
-                <strong>⚠️ Important: Save this token to make authorization permanent</strong>
+                <strong>⚠️ Important: Save this token to Vercel</strong>
                 <ol>
                   <li>Copy the token above</li>
                   <li>Go to your <a href="https://vercel.com/dashboard" target="_blank">Vercel Dashboard</a></li>
                   <li>Select your project → Settings → Environment Variables</li>
-                  <li>Add: <code>GOOGLE_REFRESH_TOKEN</code> = (paste the token)</li>
+                  <li>${hasEnvRefreshToken ? 'Update' : 'Add'}: <code>GOOGLE_REFRESH_TOKEN</code> = (paste the token)</li>
                   <li>Redeploy your project</li>
                 </ol>
               </div>
+            ` : `
+              <p style="color: #dc2626;"><strong>Warning:</strong> No refresh token was received from Google.</p>
+              <p>This can happen if you've already authorized this app before. Try revoking access at 
+                <a href="https://myaccount.google.com/permissions" target="_blank">Google Account Permissions</a> 
+                and authorizing again.</p>
             `}
             
             <button class="close-btn" onclick="closeWindow()">Close & Refresh Dashboard</button>
