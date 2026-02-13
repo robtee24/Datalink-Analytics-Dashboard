@@ -13,17 +13,26 @@ import { API_BASE_URL } from './config/api';
 import type { DateRange } from './types';
 
 function App() {
+  // Live editing state (changes as user selects dates)
   const [dateRange, setDateRange] = useState<DateRange>({
     startDate: new Date(new Date().setDate(new Date().getDate() - 30)),
     endDate: new Date(),
   });
   const [compareDateRange, setCompareDateRange] = useState<DateRange | null>(null);
+  
+  // Committed state (only updates when Load Data is clicked)
+  const [committedDateRange, setCommittedDateRange] = useState<DateRange | null>(null);
+  const [committedCompareDateRange, setCommittedCompareDateRange] = useState<DateRange | null>(null);
+  
   const [showOAuthModal, setShowOAuthModal] = useState(false);
   const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
   const [loadTrigger, setLoadTrigger] = useState(0); // Increments when user clicks "Load Data"
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   const handleLoadData = () => {
+    // Commit the current date ranges
+    setCommittedDateRange({ ...dateRange });
+    setCommittedCompareDateRange(compareDateRange ? { ...compareDateRange } : null);
     setLoadTrigger(prev => prev + 1);
     setHasLoadedOnce(true);
   };
@@ -80,25 +89,16 @@ function App() {
           </button>
         </div>
         
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <DatePeriodSelector
-            dateRange={dateRange}
-            compareDateRange={compareDateRange}
-            onDateRangeChange={setDateRange}
-            onCompareDateRangeChange={setCompareDateRange}
-          />
-          <div className="mt-4 flex justify-center">
-            <button
-              onClick={handleLoadData}
-              className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-semibold flex items-center gap-2"
-            >
-              <span>📊</span>
-              <span>{hasLoadedOnce ? 'Refresh Data' : 'Load Data'}</span>
-            </button>
-          </div>
-        </div>
+        <DatePeriodSelector
+          dateRange={dateRange}
+          compareDateRange={compareDateRange}
+          onDateRangeChange={setDateRange}
+          onCompareDateRangeChange={setCompareDateRange}
+          onLoadData={handleLoadData}
+          hasLoadedOnce={hasLoadedOnce}
+        />
 
-        {!hasLoadedOnce ? (
+        {!hasLoadedOnce || !committedDateRange ? (
           <div className="bg-white rounded-lg shadow-md p-12 text-center">
             <div className="text-gray-400 text-6xl mb-4">📊</div>
             <h3 className="text-xl font-semibold text-gray-700 mb-2">Set Date Range and Load Data</h3>
@@ -111,19 +111,19 @@ function App() {
             {/* SEO Tracking Sections */}
             <div className="space-y-6">
               <h2 className="text-2xl font-semibold text-gray-800">SEO Tracking</h2>
-              <HubSpotAnalytics dateRange={dateRange} compareDateRange={compareDateRange} loadTrigger={loadTrigger} />
-              <GoogleAnalytics dateRange={dateRange} compareDateRange={compareDateRange} loadTrigger={loadTrigger} />
-              <GoogleSearchConsole dateRange={dateRange} compareDateRange={compareDateRange} loadTrigger={loadTrigger} />
-              <GoogleMyBusiness dateRange={dateRange} compareDateRange={compareDateRange} loadTrigger={loadTrigger} />
+              <HubSpotAnalytics dateRange={committedDateRange} compareDateRange={committedCompareDateRange} loadTrigger={loadTrigger} />
+              <GoogleAnalytics dateRange={committedDateRange} compareDateRange={committedCompareDateRange} loadTrigger={loadTrigger} />
+              <GoogleSearchConsole dateRange={committedDateRange} compareDateRange={committedCompareDateRange} loadTrigger={loadTrigger} />
+              <GoogleMyBusiness dateRange={committedDateRange} compareDateRange={committedCompareDateRange} loadTrigger={loadTrigger} />
             </div>
 
             {/* Paid Ads Tracking Sections */}
             <div className="space-y-6">
               <h2 className="text-2xl font-semibold text-gray-800">Paid Ads Tracking</h2>
-              <MetaAds dateRange={dateRange} compareDateRange={compareDateRange} loadTrigger={loadTrigger} />
-              <RedditAds dateRange={dateRange} compareDateRange={compareDateRange} loadTrigger={loadTrigger} />
-              <GoogleAds dateRange={dateRange} compareDateRange={compareDateRange} loadTrigger={loadTrigger} />
-              <LinkedInAds dateRange={dateRange} compareDateRange={compareDateRange} loadTrigger={loadTrigger} />
+              <MetaAds dateRange={committedDateRange} compareDateRange={committedCompareDateRange} loadTrigger={loadTrigger} />
+              <RedditAds dateRange={committedDateRange} compareDateRange={committedCompareDateRange} loadTrigger={loadTrigger} />
+              <GoogleAds dateRange={committedDateRange} compareDateRange={committedCompareDateRange} loadTrigger={loadTrigger} />
+              <LinkedInAds dateRange={committedDateRange} compareDateRange={committedCompareDateRange} loadTrigger={loadTrigger} />
             </div>
           </div>
         )}

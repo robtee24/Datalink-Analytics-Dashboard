@@ -6,6 +6,8 @@ interface DatePeriodSelectorProps {
   compareDateRange: DateRange | null;
   onDateRangeChange: (range: DateRange) => void;
   onCompareDateRangeChange: (range: DateRange | null) => void;
+  onLoadData: () => void;
+  hasLoadedOnce: boolean;
 }
 
 export default function DatePeriodSelector({
@@ -13,6 +15,8 @@ export default function DatePeriodSelector({
   compareDateRange,
   onDateRangeChange,
   onCompareDateRangeChange,
+  onLoadData,
+  hasLoadedOnce,
 }: DatePeriodSelectorProps) {
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onDateRangeChange({
@@ -118,6 +122,16 @@ export default function DatePeriodSelector({
               />
             </div>
           )}
+        </div>
+
+        <div className="flex items-end">
+          <button
+            onClick={onLoadData}
+            className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-semibold flex items-center gap-2"
+          >
+            <span>📊</span>
+            <span>{hasLoadedOnce ? 'Refresh Data' : 'Load Data'}</span>
+          </button>
         </div>
       </div>
     </div>
