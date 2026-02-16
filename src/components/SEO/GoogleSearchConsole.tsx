@@ -12,6 +12,59 @@ interface GoogleSearchConsoleProps {
   loadTrigger: number;
 }
 
+// Intent types and their styling
+type IntentType = 'informational' | 'navigational' | 'transactional' | 'commercial';
+
+const INTENT_CONFIG: Record<IntentType, { label: string; color: string; bgColor: string }> = {
+  informational: { label: 'Informational', color: 'text-blue-700', bgColor: 'bg-blue-100 hover:bg-blue-200' },
+  navigational: { label: 'Navigational', color: 'text-purple-700', bgColor: 'bg-purple-100 hover:bg-purple-200' },
+  transactional: { label: 'Transactional', color: 'text-green-700', bgColor: 'bg-green-100 hover:bg-green-200' },
+  commercial: { label: 'Commercial', color: 'text-orange-700', bgColor: 'bg-orange-100 hover:bg-orange-200' },
+};
+
+const INTENT_ORDER: IntentType[] = ['informational', 'navigational', 'transactional', 'commercial'];
+
+// Auto-classify keyword based on patterns
+function autoClassifyIntent(keyword: string): IntentType {
+  const kw = keyword.toLowerCase();
+  
+  // Transactional patterns (highest priority)
+  if (/\b(buy|purchase|order|shop|price|pricing|cost|cheap|deal|discount|coupon|sale|for sale|affordable|quote)\b/.test(kw)) {
+    return 'transactional';
+  }
+  
+  // Commercial/Research patterns
+  if (/\b(best|top|review|reviews|compare|comparison|vs|versus|alternative|alternatives|recommended|rating|ratings)\b/.test(kw)) {
+    return 'commercial';
+  }
+  
+  // Navigational patterns
+  if (/\b(login|log in|sign in|signin|website|official|account|dashboard|portal|app|download)\b/.test(kw)) {
+    return 'navigational';
+  }
+  
+  // Informational patterns
+  if (/\b(how|what|why|when|where|who|which|can|does|do|is|are|guide|tutorial|tips|learn|example|examples|definition|meaning|explained)\b/.test(kw)) {
+    return 'informational';
+  }
+  
+  // Default to informational for general queries
+  return 'informational';
+}
+
+// Find similar keywords based on shared words
+function findSimilarKeywords(targetKeyword: string, allKeywords: string[]): string[] {
+  const targetWords = targetKeyword.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  if (targetWords.length === 0) return [];
+  
+  return allKeywords.filter(kw => {
+    if (kw === targetKeyword) return false;
+    const kwWords = kw.toLowerCase().split(/\s+/);
+    // Check if any significant word matches
+    return targetWords.some(tw => kwWords.some(kww => kww.includes(tw) || tw.includes(kww)));
+  });
+}
+
 export default function GoogleSearchConsole({ dateRange, compareDateRange, loadTrigger }: GoogleSearchConsoleProps) {
   const [data, setData] = useState<{
     current: any;
@@ -30,6 +83,56 @@ export default function GoogleSearchConsole({ dateRange, compareDateRange, loadT
   const [expandedKeyword, setExpandedKeyword] = useState<string | null>(null);
   const [keywordPages, setKeywordPages] = useState<Map<string, Array<{ page: string; clicks: number; impressions: number; ctr: number }>>>(new Map());
   const [loadingPages, setLoadingPages] = useState<Set<string>>(new Set());
+  
+  // Intent classification state
+  const [intentOverrides, setIntentOverrides] = useState<Record<string, IntentType>>(() => {
+    // Load from localStorage on init
+    try {
+      const stored = localStorage.getItem('keyword-intent-overrides');
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [intentModal, setIntentModal] = useState<{ keyword: string; currentIntent: IntentType } | null>(null);
+  const [similarKeywords, setSimilarKeywords] = useState<string[]>([]);
+  const [selectedSimilar, setSelectedSimilar] = useState<Set<string>>(new Set());
+
+  // Save intent overrides to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('keyword-intent-overrides', JSON.stringify(intentOverrides));
+  }, [intentOverrides]);
+
+  // Get intent for a keyword (override or auto-classified)
+  const getKeywordIntent = (keyword: string): IntentType => {
+    return intentOverrides[keyword] || autoClassifyIntent(keyword);
+  };
+
+  // Handle intent change
+  const handleIntentChange = (keyword: string, newIntent: IntentType, applyToSimilar: boolean) => {
+    const newOverrides = { ...intentOverrides, [keyword]: newIntent };
+    
+    if (applyToSimilar && selectedSimilar.size > 0) {
+      selectedSimilar.forEach(similarKw => {
+        newOverrides[similarKw] = newIntent;
+      });
+    }
+    
+    setIntentOverrides(newOverrides);
+    setIntentModal(null);
+    setSelectedSimilar(new Set());
+  };
+
+  // Open intent modal
+  const openIntentModal = (keyword: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const currentIntent = getKeywordIntent(keyword);
+    const allKeywords = data?.current?.keywords?.map((k: any) => k.keyword) || [];
+    const similar = findSimilarKeywords(keyword, allKeywords);
+    setSimilarKeywords(similar);
+    setSelectedSimilar(new Set());
+    setIntentModal({ keyword, currentIntent });
+  };
 
   const itemsPerPage = 20;
 
@@ -434,6 +537,12 @@ export default function GoogleSearchConsole({ dateRange, compareDateRange, loadT
                 >
                   Keyword {getSortIcon('keyword')}
                 </th>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  rowSpan={compareDateRange ? 2 : 1}
+                >
+                  Intent
+                </th>
                 {compareDateRange ? (
                   <>
                     <th colSpan={2} className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('position')}>
@@ -571,6 +680,21 @@ export default function GoogleSearchConsole({ dateRange, compareDateRange, loadT
                             )}
                           </div>
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {(() => {
+                            const intent = getKeywordIntent(keyword.keyword);
+                            const config = INTENT_CONFIG[intent];
+                            return (
+                              <button
+                                onClick={(e) => openIntentModal(keyword.keyword, e)}
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${config.bgColor} ${config.color} transition-colors`}
+                                title="Click to change intent classification"
+                              >
+                                {config.label}
+                              </button>
+                            );
+                          })()}
+                        </td>
                       {compareDateRange ? (
                         <>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -619,7 +743,7 @@ export default function GoogleSearchConsole({ dateRange, compareDateRange, loadT
                       <>
                         {isLoadingPages ? (
                           <tr className="bg-gray-50">
-                            <td colSpan={compareDateRange ? 10 : 6} className="px-6 py-4">
+                            <td colSpan={compareDateRange ? 11 : 7} className="px-6 py-4">
                               <div className="text-sm text-gray-500 py-2">Loading pages...</div>
                             </td>
                           </tr>
@@ -674,7 +798,7 @@ export default function GoogleSearchConsole({ dateRange, compareDateRange, loadT
                           ))
                         ) : (
                           <tr className="bg-gray-50">
-                            <td colSpan={compareDateRange ? 10 : 6} className="px-6 py-4">
+                            <td colSpan={compareDateRange ? 11 : 7} className="px-6 py-4">
                               <div className="text-sm text-gray-500 py-2">No page data available for this keyword</div>
                             </td>
                           </tr>
@@ -686,7 +810,7 @@ export default function GoogleSearchConsole({ dateRange, compareDateRange, loadT
                 })
               ) : (
                 <tr>
-                  <td colSpan={compareDateRange ? 10 : 6} className="px-6 py-8 text-center text-sm text-gray-500">
+                  <td colSpan={compareDateRange ? 11 : 7} className="px-6 py-8 text-center text-sm text-gray-500">
                     N/A - No keywords data available
                   </td>
                 </tr>
@@ -737,6 +861,91 @@ export default function GoogleSearchConsole({ dateRange, compareDateRange, loadT
           </div>
         )}
       </div>
+
+      {/* Intent Classification Modal */}
+      {intentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setIntentModal(null)}>
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Intent Classification</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Keyword: <span className="font-medium">{intentModal.keyword}</span>
+            </p>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Intent Type:</label>
+              <div className="grid grid-cols-2 gap-2">
+                {INTENT_ORDER.map((intent) => {
+                  const config = INTENT_CONFIG[intent];
+                  const isSelected = intentModal.currentIntent === intent;
+                  return (
+                    <button
+                      key={intent}
+                      onClick={() => setIntentModal({ ...intentModal, currentIntent: intent })}
+                      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        isSelected 
+                          ? `${config.bgColor} ${config.color} ring-2 ring-offset-1 ring-gray-400` 
+                          : `${config.bgColor} ${config.color}`
+                      }`}
+                    >
+                      {config.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {similarKeywords.length > 0 && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Apply to similar keywords ({similarKeywords.length} found):
+                </label>
+                <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-md p-2">
+                  {similarKeywords.map((kw) => (
+                    <label key={kw} className="flex items-center gap-2 py-1 hover:bg-gray-50 px-1 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedSimilar.has(kw)}
+                        onChange={() => {
+                          const newSelected = new Set(selectedSimilar);
+                          if (newSelected.has(kw)) {
+                            newSelected.delete(kw);
+                          } else {
+                            newSelected.add(kw);
+                          }
+                          setSelectedSimilar(newSelected);
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="text-sm text-gray-700 truncate">{kw}</span>
+                    </label>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setSelectedSimilar(new Set(similarKeywords))}
+                  className="mt-2 text-xs text-blue-600 hover:text-blue-800"
+                >
+                  Select All
+                </button>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setIntentModal(null)}
+                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleIntentChange(intentModal.keyword, intentModal.currentIntent, selectedSimilar.size > 0)}
+                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Apply Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
